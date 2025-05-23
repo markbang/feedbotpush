@@ -2,11 +2,7 @@ name: Build and Push Docker Image to GitHub Packages
 
 on:
   push:
-    branches: ['main'] # Or your desired branch
-    # Or trigger on tag creation, releases, etc.
-    # tags:
-    #   - 'v*.*.*'
-  # Allows you to run this workflow manually from the Actions tab
+    branches: ['main']
   workflow_dispatch:
 
 jobs:
@@ -14,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write # Required to push to GitHub Packages
+      packages: write
 
     steps:
       - name: Checkout repository
@@ -30,14 +26,9 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: . # Path to your Dockerfile and build context
+          context: .
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/<IMAGE_NAME>:${{ github.sha }}
-          # You can also use other tags like:
-          # tags: |
-          #   ghcr.io/${{ github.repository_owner }}/<IMAGE_NAME>:latest
-          #   ghcr.io/${{ github.repository_owner }}/<IMAGE_NAME>:${{ github.ref_name }}
-          #   ghcr.io/${{ github.repository_owner }}/<IMAGE_NAME>:${{ github.run_id }}
+          tags: ghcr.io/${{ github.repository_owner }}/feedbot:${{ github.sha }}
           labels: |
             org.opencontainers.image.source=${{ github.repositoryUrl }}
             org.opencontainers.image.created=${{ steps.meta.outputs.created }}
