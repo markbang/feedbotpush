@@ -2,7 +2,8 @@ name: Build and Push Docker Image to GitHub Packages
 
 on:
   push:
-    branches: ['main']
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
 
 jobs:
@@ -28,7 +29,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/feedbot:${{ github.sha }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/feedbot:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/feedbot:latest
           labels: |
             org.opencontainers.image.source=${{ github.repositoryUrl }}
             org.opencontainers.image.created=${{ steps.meta.outputs.created }}
