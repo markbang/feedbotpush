@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     SUMMARY_INTERVAL_HOURS: int = (
         0  # Alternative: run every X hours, 0 to disable interval-based scheduling
     )
-    RUN_SUMMARY_ON_STARTUP: bool = True  # Added for debugging startup task
+    RUN_SUMMARY_ON_STARTUP: bool = False  # Added for debugging startup task
+    RUN_WEEKLY_SUMMARY_ON_STARTUP: bool = False
 
     class Config:
         env_file = ".env"  # Load variables from .env file in the project root

@@ -12,41 +12,84 @@ from app.services.webhook_sender import send_summary_to_webhook
 from app.crud import get_feedback_since
 
 
-async def run_feedback_summary_job():
-    """
-    Job to fetch recent feedback, summarize it, and send it to a webhook.
-    """
-    print(f"Running feedback summary job at {datetime.now(timezone.utc)}")
-    db: Session = next(get_session())  # Get a new database session
-
-    since_datetime_utc = datetime.now(timezone.utc) - timedelta(
-        hours=settings.SUMMARY_INTERVAL_HOURS
-        if settings.SUMMARY_INTERVAL_HOURS > 0
-        else 24
+async def _process_and_send_summary(
+    db: Session, since_datetime_utc: datetime, job_name: str
+):
+    """Helper function to process and send feedback summary."""
+    print(
+        f"[{job_name}] Fetching feedback since {since_datetime_utc.astimezone(utc_plus_8).strftime('%Y-%m-%d %H:%M:%S %Z')}"
     )
-
     feedback_to_summarize = get_feedback_since(
         db, since_datetime_utc=since_datetime_utc
     )
 
     if not feedback_to_summarize:
-        print("No new feedback to summarize.")
-        db.close()
+        print(
+            f"[{job_name}] No new feedback to summarize for the period since {since_datetime_utc.astimezone(utc_plus_8).strftime('%Y-%m-%d %H:%M:%S %Z')}."
+        )
         return
 
-    print(f"Found {len(feedback_to_summarize)} feedback entries to summarize.")
-
+    print(
+        f"[{job_name}] Found {len(feedback_to_summarize)} feedback entries to summarize."
+    )
     summary = summarize_feedback_with_openai(feedback_to_summarize)
 
     if summary:
-        print(
-            f"Summary generated: {summary[:200]}..."
-        )  # Print first 200 chars of summary
-        send_summary_to_webhook(summary)
+        print(f"[{job_name}] Summary generated: {summary[:200]}...")
+        send_summary_to_webhook(summary, job_name)
     else:
-        print("Failed to generate summary or summary was empty.")
+        print(f"[{job_name}] Failed to generate summary or summary was empty.")
 
-    db.close()
+
+async def run_feedback_summary_job():
+    """
+    Job to fetch recent feedback based on configured interval/schedule, summarize it, and send it to a webhook.
+    """
+    job_name = "日报"
+    print(
+        f"Starting {job_name} job at {datetime.now(utc_plus_8).strftime('%Y-%m-%d %H:%M:%S %Z')}"
+    )
+    db: Session = next(get_session())  # Get a new database session
+    try:
+        hours_to_look_back = (
+            settings.SUMMARY_INTERVAL_HOURS
+            if settings.SUMMARY_INTERVAL_HOURS > 0
+            else 24
+        )
+        since_datetime_utc = datetime.now(timezone.utc) - timedelta(
+            hours=hours_to_look_back
+        )
+        await _process_and_send_summary(db, since_datetime_utc, job_name)
+    except Exception as e:
+        print(f"Error in {job_name}: {e}")
+        import traceback
+
+        traceback.print_exc()
+    finally:
+        print(f"Finished {job_name} job.")
+        db.close()
+
+
+async def run_weekly_feedback_summary_job():
+    """
+    Job to fetch feedback from the last 7 days, summarize it, and send it to a webhook.
+    """
+    job_name = "周报"
+    print(
+        f"Starting {job_name} job at {datetime.now(utc_plus_8).strftime('%Y-%m-%d %H:%M:%S %Z')}"
+    )
+    db: Session = next(get_session())
+    try:
+        since_datetime_utc = datetime.now(timezone.utc) - timedelta(days=7)
+        await _process_and_send_summary(db, since_datetime_utc, job_name)
+    except Exception as e:
+        print(f"Error in {job_name}: {e}")
+        import traceback
+
+        traceback.print_exc()
+    finally:
+        print(f"Finished {job_name} job.")
+        db.close()
 
 
 # Define UTC+8 timezone object
@@ -99,8 +142,20 @@ def schedule_feedback_summary():
 
     else:
         print(
-            "No schedule configured for feedback summary. Set SUMMARY_INTERVAL_HOURS or SUMMARY_SCHEDULE_HOURS."
+            "No daily/interval schedule configured for feedback summary. Set SUMMARY_INTERVAL_HOURS or SUMMARY_SCHEDULE_HOURS."
         )
+
+    # Schedule weekly summary job
+    print(
+        "Scheduling weekly feedback summary to run on Sunday at 19:00 (Timezone: UTC+8)."
+    )
+    scheduler.add_job(
+        run_weekly_feedback_summary_job,
+        trigger=CronTrigger(day_of_week="sun", hour=19, minute=0, timezone=utc_plus_8),
+        id="feedback_summary_weekly",
+        name="Feedback Summary (Weekly Sun 19:00 UTC+8)",
+        replace_existing=True,
+    )
 
     if scheduler.get_jobs():
         try:

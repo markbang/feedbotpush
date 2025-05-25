@@ -13,6 +13,7 @@ from .database import (
 from .tasks.daily_summary import (
     schedule_feedback_summary,
     run_feedback_summary_job,
+    run_weekly_feedback_summary_job,  # Import the weekly job function
 )
 from .core.config import settings  # Moved import to top
 
@@ -45,9 +46,22 @@ async def startup_event():
 
     # Add a one-time job to run immediately on startup for debugging if configured
     if settings.RUN_SUMMARY_ON_STARTUP:
-        print("RUN_SUMMARY_ON_STARTUP is True. Running feedback summary job now...")
+        print(
+            "RUN_SUMMARY_ON_STARTUP is True. Running daily/interval feedback summary job now..."
+        )
         # Running in a separate task to avoid blocking startup
-        asyncio.create_task(run_feedback_summary_job())
+        asyncio.create_task(
+            run_feedback_summary_job()
+        )  # This should be correct as run_feedback_summary_job is async
+
+    # Add a one-time weekly job to run immediately on startup if configured
+    if settings.RUN_WEEKLY_SUMMARY_ON_STARTUP:
+        print(
+            "RUN_WEEKLY_SUMMARY_ON_STARTUP is True. Running weekly feedback summary job now..."
+        )
+        asyncio.create_task(
+            run_weekly_feedback_summary_job()
+        )  # This should be correct as run_weekly_feedback_summary_job is async
 
 
 @app.on_event("shutdown")

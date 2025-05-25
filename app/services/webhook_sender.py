@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from app.core.config import settings
 
 
-def send_summary_to_webhook(summary: str) -> bool:
+def send_summary_to_webhook(summary: str, summary_type: str) -> bool:
     """
     Sends the summarized feedback to the configured webhook URL.
     Returns True if successful, False otherwise.
@@ -30,7 +30,7 @@ def send_summary_to_webhook(summary: str) -> bool:
                         "color": "#DFFAFF",
                     }
                 ],
-                "title": {"tag": "plain_text", "content": "日报"},
+                "title": {"tag": "plain_text", "content": f"{summary_type}"},
                 "template": "wathet",
             },
             "elements": [
