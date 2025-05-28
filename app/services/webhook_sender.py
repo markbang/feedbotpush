@@ -1,10 +1,11 @@
 # app/services/webhook_sender.py
 import httpx
-from datetime import datetime, timedelta, timezone
 from app.core.config import settings
 
 
-def send_summary_to_webhook(summary: str, summary_type: str) -> bool:
+def send_summary_to_webhook(
+    summary: str, summary_type: str, totalnum: int, typestring: str
+) -> bool:
     """
     Sends the summarized feedback to the configured webhook URL.
     Returns True if successful, False otherwise.
@@ -17,8 +18,6 @@ def send_summary_to_webhook(summary: str, summary_type: str) -> bool:
             "Webhook URL is not configured. Please set WEBHOOK_URL in your .env file."
         )
         return False
-    utc_plus_8 = timezone(timedelta(hours=8))
-    now_utc_plus_8 = datetime.now(utc_plus_8).strftime("%Y-%m-%d %H:%M:%S")
     payload = {
         "msg_type": "interactive",
         "card": {
@@ -26,9 +25,14 @@ def send_summary_to_webhook(summary: str, summary_type: str) -> bool:
                 "text_tag_list": [
                     {
                         "tag": "text_tag",
-                        "text": {"tag": "plain_text", "content": str(now_utc_plus_8)},
+                        "text": {"tag": "plain_text", "content": f"总反馈{totalnum}条"},
                         "color": "#DFFAFF",
-                    }
+                    },
+                    {
+                        "tag": "text_tag",
+                        "text": {"tag": "plain_text", "content": typestring},
+                        "color": "#59A3B0",
+                    },
                 ],
                 "title": {"tag": "plain_text", "content": f"{summary_type}"},
                 "template": "wathet",

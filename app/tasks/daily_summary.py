@@ -33,10 +33,34 @@ async def _process_and_send_summary(
         f"[{job_name}] Found {len(feedback_to_summarize)} feedback entries to summarize."
     )
     summary = summarize_feedback_with_openai(feedback_to_summarize)
+    type_counts = {}
+    for item in feedback_to_summarize:
+        ftype = getattr(item, "feedback_type", "未知类型")
+        if not ftype:  # Handles None or empty string
+            ftype = "未知类型"
+        type_counts[ftype] = type_counts.get(ftype, 0) + 1
+
+    total_items = len(feedback_to_summarize)
+
+    distribution_parts = []
+    # Sort by count (descending), then by type name (ascending) for consistent output
+    sorted_type_counts = sorted(type_counts.items(), key=lambda x: (-x[1], x[0]))
+
+    for ftype, count in sorted_type_counts:
+        percentage = (count / total_items) * 100
+        distribution_parts.append(f"{ftype}: {percentage:.1f}% ({count}条)")
+
+    if distribution_parts:
+        typestring = " | ".join(distribution_parts)
+    else:
+        # This fallback is unlikely if feedback_to_summarize is not empty
+        typestring = "类型分布: 无数据"
 
     if summary:
         print(f"[{job_name}] Summary generated: {summary[:200]}...")
-        send_summary_to_webhook(summary, job_name)
+        send_summary_to_webhook(
+            summary, job_name, len(feedback_to_summarize), typestring=typestring
+        )
     else:
         print(f"[{job_name}] Failed to generate summary or summary was empty.")
 
