@@ -1,5 +1,6 @@
 # app/services/webhook_sender.py
 import httpx
+from datetime import datetime, timezone, timedelta
 from app.core.config import settings
 
 
@@ -18,6 +19,10 @@ def send_summary_to_webhook(
             "Webhook URL is not configured. Please set WEBHOOK_URL in your .env file."
         )
         return False
+    utc_plus8 = timezone(timedelta(hours=8))
+    now = datetime.now(utc_plus8)
+    content = f"""<font color="green">{typestring}</font>\n{summary}
+    """
     payload = {
         "msg_type": "interactive",
         "card": {
@@ -30,18 +35,21 @@ def send_summary_to_webhook(
                     },
                     {
                         "tag": "text_tag",
-                        "text": {"tag": "plain_text", "content": typestring},
+                        "text": {
+                            "tag": "plain_text",
+                            "content": now.strftime("%Y-%m-%d %H:%M:%S"),
+                        },
                         "color": "#59A3B0",
                     },
                 ],
-                "title": {"tag": "plain_text", "content": f"{summary_type}"},
+                "title": {"tag": "plain_text", "content": summary_type},
                 "template": "wathet",
             },
             "elements": [
                 {
                     "tag": "div",
                     "text": {
-                        "content": summary,
+                        "content": content,
                         "tag": "lark_md",
                     },
                 }
