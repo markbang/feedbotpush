@@ -79,7 +79,9 @@ def summarize_feedback_with_openai(feedback_list: List[UserFeedback]) -> str | N
                 },
                 {"role": "user", "content": prompt},
             ],
+            temperature=0.7,
         )
+        print(response)
         if (
             response.choices
             and response.choices[0].message

@@ -21,8 +21,9 @@ def send_summary_to_webhook(
         return False
     utc_plus8 = timezone(timedelta(hours=8))
     now = datetime.now(utc_plus8)
-    content = f"""<font color="green">{typestring}</font>\n{summary}
+    content = f"""**<font color="green">总反馈{totalnum}条</font>**: <font color="green">{typestring}</font>\n{summary}
     """
+    weekdays_zh = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
     payload = {
         "msg_type": "interactive",
         "card": {
@@ -30,14 +31,9 @@ def send_summary_to_webhook(
                 "text_tag_list": [
                     {
                         "tag": "text_tag",
-                        "text": {"tag": "plain_text", "content": f"总反馈{totalnum}条"},
-                        "color": "#DFFAFF",
-                    },
-                    {
-                        "tag": "text_tag",
                         "text": {
                             "tag": "plain_text",
-                            "content": now.strftime("%Y-%m-%d %H:%M:%S"),
+                            "content": f"{now.strftime('%Y-%m-%d')} {weekdays_zh[now.weekday()]}",
                         },
                         "color": "#59A3B0",
                     },

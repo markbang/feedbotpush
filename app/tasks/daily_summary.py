@@ -48,7 +48,7 @@ async def _process_and_send_summary(
 
     for ftype, count in sorted_type_counts:
         percentage = (count / total_items) * 100
-        distribution_parts.append(f"{ftype}: {percentage:.1f}% ({count}条)")
+        distribution_parts.append(f"{ftype}: {count}条 ({percentage:.1f}%)")
 
     if distribution_parts:
         typestring = " | ".join(distribution_parts)
@@ -69,7 +69,7 @@ async def run_feedback_summary_job():
     """
     Job to fetch recent feedback based on configured interval/schedule, summarize it, and send it to a webhook.
     """
-    job_name = "日报"
+    job_name = "用户反馈日报"
     print(
         f"Starting {job_name} job at {datetime.now(utc_plus_8).strftime('%Y-%m-%d %H:%M:%S %Z')}"
     )
@@ -98,7 +98,7 @@ async def run_weekly_feedback_summary_job():
     """
     Job to fetch feedback from the last 7 days, summarize it, and send it to a webhook.
     """
-    job_name = "周报"
+    job_name = "用户反馈周报"
     print(
         f"Starting {job_name} job at {datetime.now(utc_plus_8).strftime('%Y-%m-%d %H:%M:%S %Z')}"
     )
